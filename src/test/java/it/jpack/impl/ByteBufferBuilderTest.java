@@ -5,6 +5,7 @@ import it.jpack.TestPointer1;
 import it.jpack.TestPointer2;
 import it.jpack.TestPointer3;
 import it.jpack.TestPointer4;
+import it.jpack.TestPointer5;
 import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -93,17 +94,37 @@ public class ByteBufferBuilderTest {
         for (int i = 0; i < 10; i++) {
             p.at(i);
             for (int j = 0; j < 8; j++) {
-                try {
-                    p.setValue(j, (i + 1) * (j + 20));
-                } catch (RuntimeException ex) {
-                    throw new IllegalStateException("Error at " + i + "," + j, ex);
-                }
+                p.setValue(j, (i + 1) * (j + 20));
             }
         }
         for (int i = 0; i < 10; i++) {
             p.at(i);
             for (int j = 0; j < 8; j++) {
                 assertEquals((i + 1) * (j + 20), p.getValue(j));
+            }
+        }
+    }
+
+    @Test
+    public void verifyNonPrimitiveArray() {
+        ByteBufferArray<TestPointer5> arr = REPO.newArray(TestPointer5.class, 10);
+        assertEquals(48, arr.getStructSize());
+        TestPointer5 p = arr.newPointer();
+        TestPointer1 p2 = p.getArray();
+        for (int i = 0; i < 10; i++) {
+            p.at(i);
+            for (int j = 0; j < 4; j++) {
+                p2.at(j);
+                p.getArray().setInt(i + j * 10);
+                p.getArray().setDouble(i + j * 20.0);
+            }
+        }
+        for (int i = 0; i < 10; i++) {
+            p.at(i);
+            for (int j = 0; j < 4; j++) {
+                p2.at(j);
+                assertEquals(i + j * 10, p.getArray().getInt());
+                assertEquals(i + j * 20.0, p.getArray().getDouble(), 0.0);
             }
         }
     }

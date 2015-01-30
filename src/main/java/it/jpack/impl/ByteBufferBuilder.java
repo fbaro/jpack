@@ -55,34 +55,6 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
         }
     }
 
-    private <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface) {
-        ByteBufferArrayFactory<S> innerFactory = repository.getFactory(pointerInterface);
-        try {
-            ctClass.addField(new CtField(innerFactory.getCtImplementation(), name, ctClass));
-            constructorBody.append(String.format("this.%s = new %s(array, this, %d);", name, innerFactory.getCtImplementation().getName(), offset));
-
-            String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-            ctClass.addMethod(CtNewMethod.make("public " + pointerInterface.getName() + " get" + cName + "() { return " + name + "; }", ctClass));
-            ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + pointerInterface.getName() + " value) { throw new UnsupportedOperationException(); }", ctClass));
-            offset += align(innerFactory.getStructSize());
-        } catch (CannotCompileException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
-    private ByteBufferArrayFactory<T> build() {
-        try {
-            ctClass.addMethod(CtNewMethod.make("public int getStructSize() { return " + offset + "; }", ctClass));
-            ctClass.addConstructor(CtNewConstructor.make("public " + ctClass.getSimpleName() + "(" + 
-                    ByteBufferArray.class.getName() + " array, "
-                    + StructPointerInternal.class.getName() + " parentPointer, "
-                    + "int parentOffset) { " + constructorBody + " } ", ctClass));
-            return new ByteBufferArrayFactory<>(pointerInterface, (Class<? extends T>) ctClass.toClass(), ctClass, offset);
-        } catch (CannotCompileException ex) {
-            throw new IllegalStateException("Error finalizing class creation", ex);
-        }
-    }
-
     private void addPrimitive(String name, String type, int fieldSize) throws IllegalStateException {
         try {
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
@@ -109,9 +81,37 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
         }
     }
 
+    private <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface, int length) {
+        ByteBufferArrayFactory<S> innerFactory = repository.getFactory(pointerInterface);
+        try {
+            ctClass.addField(new CtField(innerFactory.getCtImplementation(), name, ctClass));
+            constructorBody.append(String.format("this.%s = new %s(array, this, %d);", name, innerFactory.getCtImplementation().getName(), offset));
+
+            String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            ctClass.addMethod(CtNewMethod.make("public " + pointerInterface.getName() + " get" + cName + "() { return " + name + "; }", ctClass));
+            ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + pointerInterface.getName() + " value) { throw new UnsupportedOperationException(); }", ctClass));
+            offset += align(innerFactory.getStructSize() * length);
+        } catch (CannotCompileException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     private int align(int size) {
         int rem = size % alignment;
         return rem == 0 ? size : size + (alignment - rem);
+    }
+
+    private ByteBufferArrayFactory<T> build() {
+        try {
+            ctClass.addMethod(CtNewMethod.make("public int getStructSize() { return " + offset + "; }", ctClass));
+            ctClass.addConstructor(CtNewConstructor.make("public " + ctClass.getSimpleName() + "(" + 
+                    ByteBufferArray.class.getName() + " array, "
+                    + StructPointerInternal.class.getName() + " parentPointer, "
+                    + "int parentOffset) { " + constructorBody + " } ", ctClass));
+            return new ByteBufferArrayFactory<>(pointerInterface, (Class<? extends T>) ctClass.toClass(), ctClass, offset);
+        } catch (CannotCompileException ex) {
+            throw new IllegalStateException("Error finalizing class creation", ex);
+        }
     }
 
     public static <T extends StructPointer<T>> ByteBufferArrayFactory<T> build(ByteBufferRepository repository, Class<T> pointerInterface) {
@@ -185,9 +185,10 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
         public final int length;
         public final boolean hasGetter;
         public final boolean hasSetter;
+        public final boolean arrayMethod;
         public final TypeHelper typeHelper;
 
-        private PropertyInfo(String name, Class<?> type, int position, int length, boolean hasGetter, boolean hasSetter, TypeHelper typeHelper) {
+        private PropertyInfo(String name, Class<?> type, int position, int length, boolean arrayMethod, boolean hasGetter, boolean hasSetter, TypeHelper typeHelper) {
             if (length < 0) {
                 throw new IllegalArgumentException("Array field length must be positive");
             }
@@ -195,6 +196,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             this.type = type;
             this.position = position;
             this.length = length;
+            this.arrayMethod = arrayMethod;
             this.hasGetter = hasGetter;
             this.hasSetter = hasSetter;
             this.typeHelper = typeHelper;
@@ -204,20 +206,26 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             String name = Introspector.decapitalize(m.getName().substring(3));
             Class<?> type = m.getReturnType();
             StructField annotation = m.getAnnotation(StructField.class);
+            if (m.getParameterTypes().length == 1 && !type.isPrimitive()) {
+                throw new IllegalArgumentException("Non-primitive inner arrays do not support array method signature: error on " + m);
+            }
             return new PropertyInfo(name, type, 
                     annotation == null ? Integer.MAX_VALUE : annotation.position(), 
                     annotation == null ? 0 : annotation.length(),
-                    true, false, findHelper(name, type));
+                    m.getParameterTypes().length == 1, true, false, findHelper(name, type));
         }
 
         public static PropertyInfo forSetter(Method m) {
             String name = Introspector.decapitalize(m.getName().substring(3));
             Class<?> type = m.getParameterTypes()[m.getParameterTypes().length - 1];
             StructField annotation = m.getAnnotation(StructField.class);
+            if (m.getParameterTypes().length == 2 && !type.isPrimitive()) {
+                throw new IllegalArgumentException("Non-primitive inner arrays do not support array method signature: error on method " + m);
+            }
             return new PropertyInfo(name, type, 
                     annotation == null ? Integer.MAX_VALUE : annotation.position(),
                     annotation == null ? 0 : annotation.length(),
-                    false, true, findHelper(name, type));
+                    m.getParameterTypes().length == 2, false, true, findHelper(name, type));
         }
 
         private static TypeHelper findHelper(String name, Class<?> type) {
@@ -236,6 +244,9 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             if (this.type != other.type) {
                 throw new IllegalArgumentException("Type mismatch for property " + name);
             }
+            if (this.arrayMethod != other.arrayMethod) {
+                throw new IllegalArgumentException("Array method signature mismatch for property " + name);
+            }
             if (this.typeHelper != other.typeHelper) {
                 throw new IllegalStateException("Type helper mismatch for property " + name);
             }
@@ -247,7 +258,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             }
             return new PropertyInfo(name, type, 
                     this.position == Integer.MAX_VALUE ? other.position : this.position,
-                    this.length == 0 ? other.length : this.length,
+                    this.length == 0 ? other.length : this.length, this.arrayMethod,
                     this.hasGetter || other.hasGetter, this.hasSetter || other.hasSetter, typeHelper);
         }
 
@@ -264,7 +275,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
                     builder.addPrimitiveArray(name, type.getSimpleName(), typeHelper.getBitSize() / 8, length);
                 }
             } else {
-                builder.addStruct(name, (Class) type);
+                builder.addStruct(name, (Class) type, length == 0 ? 1 : length);
             }
         }
 
