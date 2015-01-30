@@ -27,7 +27,7 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
         this.pointerImplementation = pointerImplementation;
         buffer.position(0);
         try {
-            constructor = pointerImplementation.getConstructor(ByteBufferArray.class, StructPointerInternal.class, Integer.TYPE);
+            constructor = pointerImplementation.getConstructor(StructArrayInternal.class, StructPointerInternal.class, Integer.TYPE);
         } catch (NoSuchMethodException | SecurityException ex) {
             throw new IllegalStateException(ex);
         }

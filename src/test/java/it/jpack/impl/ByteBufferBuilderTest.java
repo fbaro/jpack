@@ -1,5 +1,6 @@
 package it.jpack.impl;
 
+import it.jpack.StructArray;
 import it.jpack.StructPointer;
 import it.jpack.TestPointer1;
 import it.jpack.TestPointer2;
@@ -25,7 +26,7 @@ public class ByteBufferBuilderTest {
 
     @Test
     public void verifySimpleClassIntrospectiveCreation() {
-        ByteBufferArray<TestPointer1> arr = REPO.newArray(TestPointer1.class, 10);
+        StructArray<TestPointer1> arr = REPO.newArray(TestPointer1.class, 10);
         assertEquals(12, arr.getStructSize());
         TestPointer1 p = arr.newPointer();
         for (int i = 0; i < 10; i++) {
@@ -40,7 +41,7 @@ public class ByteBufferBuilderTest {
 
     @Test
     public void verifyNestedClassIntrospectiveCreation() {
-        ByteBufferArray<TestPointer2> arr = REPO.newArray(TestPointer2.class, 10);
+        StructArray<TestPointer2> arr = REPO.newArray(TestPointer2.class, 10);
         assertEquals(16, arr.getStructSize());
         TestPointer2 p = arr.newPointer();
         TestPointer1 p1 = p.getInner();
@@ -58,7 +59,7 @@ public class ByteBufferBuilderTest {
 
     @Test
     public void verifyComplexClassIntrospectiveCreation() {
-        ByteBufferArray<TestPointer3> arr = REPO.newArray(TestPointer3.class, 10);
+        StructArray<TestPointer3> arr = REPO.newArray(TestPointer3.class, 10);
         assertEquals(40, arr.getStructSize());
         TestPointer3 p = arr.newPointer();
         for (int i = 1; i <= 10; i++) {
@@ -83,12 +84,12 @@ public class ByteBufferBuilderTest {
 
     @Test
     public void verifyAllPrimitiveTypesWork() {
-        ByteBufferArray<AllPrimitiveTypes> arr = REPO.newArray(AllPrimitiveTypes.class, 10);
+        StructArray<AllPrimitiveTypes> arr = REPO.newArray(AllPrimitiveTypes.class, 10);
     }
 
     @Test
     public void verifySimplePrimitiveArray() {
-        ByteBufferArray<TestPointer4> arr = REPO.newArray(TestPointer4.class, 10);
+        StructArray<TestPointer4> arr = REPO.newArray(TestPointer4.class, 10);
         assertEquals(64, arr.getStructSize());
         TestPointer4 p = arr.newPointer();
         for (int i = 0; i < 10; i++) {
@@ -107,7 +108,7 @@ public class ByteBufferBuilderTest {
 
     @Test
     public void verifyNonPrimitiveArray() {
-        ByteBufferArray<TestPointer5> arr = REPO.newArray(TestPointer5.class, 10);
+        StructArray<TestPointer5> arr = REPO.newArray(TestPointer5.class, 10);
         assertEquals(48, arr.getStructSize());
         TestPointer5 p = arr.newPointer();
         TestPointer1 p2 = p.getArray();

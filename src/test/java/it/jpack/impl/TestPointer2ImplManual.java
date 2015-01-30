@@ -37,12 +37,6 @@ public final class TestPointer2ImplManual extends AbstractByteBufferPointer<Test
     }
 
     @Override
-    public TestPointer2 at(int index) {
-        setIndex(index);
-        return this;
-    }
-
-    @Override
     public int getStructSize() {
         return 16;
     }

@@ -5,6 +5,7 @@ import it.jpack.StructPointer;
 /**
  *
  * @author fbaro
+ * @param <T>
  */
 public interface StructPointerInternal<T extends StructPointer<T>> extends StructPointer<T> {
     /**

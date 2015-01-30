@@ -9,12 +9,12 @@ import it.jpack.StructPointer;
  */
 public abstract class AbstractByteBufferPointer<T extends StructPointer<T>> implements StructPointerInternal<T> {
 
-    protected final ByteBufferArray<?> array;
+    protected final StructArrayInternal<?> array;
     protected final StructPointerInternal<?> parentPointer;
     protected final int parentOffset;
     protected int index = 0;
 
-    protected AbstractByteBufferPointer(ByteBufferArray<?> array, StructPointerInternal<?> parentPointer, int parentOffset) {
+    protected AbstractByteBufferPointer(StructArrayInternal<?> array, StructPointerInternal<?> parentPointer, int parentOffset) {
         this.array = array;
         this.parentPointer = parentPointer;
         this.parentOffset = parentOffset;
@@ -32,6 +32,12 @@ public abstract class AbstractByteBufferPointer<T extends StructPointer<T>> impl
     @Override
     public final void setIndex(int index) {
         this.index = index;
+    }
+
+    @Override
+    public final T at(int index) {
+        setIndex(index);
+        return (T) this;
     }
 
     @Override
