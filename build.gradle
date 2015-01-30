@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+sourceCompatibility = '1.7'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+group = 'com.github.fbaro'
+
+dependencies {
+    compile 'org.javassist:javassist:3.19.0-GA'
+    
+    testCompile group: 'junit', name: 'junit', version: '4.10'
+}
