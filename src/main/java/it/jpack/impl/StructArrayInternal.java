@@ -5,7 +5,7 @@ import it.jpack.StructPointer;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public interface StructArrayInternal<T extends StructPointer<T>> extends StructArray<T> {
 

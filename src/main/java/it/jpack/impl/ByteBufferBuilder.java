@@ -19,7 +19,7 @@ import javassist.Modifier;
 import javassist.NotFoundException;
 
 /**
- * @author list
+ * @author fbaro
  * @param <T>
  */
 public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuilder<T> {

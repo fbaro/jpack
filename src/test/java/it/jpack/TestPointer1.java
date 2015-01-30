@@ -1,10 +1,8 @@
 package it.jpack;
 
-import it.jpack.StructPointer;
-
 /**
  *
- * @author list
+ * @author fbaro
  */
 public interface TestPointer1 extends StructPointer<TestPointer1> {
     

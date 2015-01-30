@@ -2,7 +2,7 @@ package it.jpack;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public enum StructLayout {
     Row, Column

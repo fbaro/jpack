@@ -2,7 +2,7 @@ package it.jpack;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public @interface StructField {
     int position() default Integer.MAX_VALUE;

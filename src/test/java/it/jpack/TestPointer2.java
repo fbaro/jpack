@@ -1,10 +1,8 @@
 package it.jpack;
 
-import it.jpack.StructPointer;
-
 /**
  *
- * @author list
+ * @author fbaro
  */
 public interface TestPointer2 extends StructPointer<TestPointer2> {
     float getFloat();

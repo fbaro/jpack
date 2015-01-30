@@ -1,12 +1,11 @@
-package it.jpack;
+package it.jpack.impl;
 
-import it.jpack.impl.AbstractByteBufferPointer;
-import it.jpack.impl.ByteBufferArray;
-import it.jpack.impl.StructPointerInternal;
+import it.jpack.TestPointer1;
+import it.jpack.TestPointer2;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public final class TestPointer2ImplManual extends AbstractByteBufferPointer<TestPointer2> implements TestPointer2 {
 

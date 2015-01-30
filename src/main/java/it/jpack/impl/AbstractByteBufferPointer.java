@@ -4,7 +4,7 @@ import it.jpack.StructPointer;
 
 /**
  *
- * @author list
+ * @author fbaro
  * @param <T>
  */
 public abstract class AbstractByteBufferPointer<T extends StructPointer<T>> implements StructPointerInternal<T> {

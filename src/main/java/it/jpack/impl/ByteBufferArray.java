@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 
 /**
  *
- * @author list
+ * @author fbaro
  * @param <T>
  */
 public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayInternal<T> {

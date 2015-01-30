@@ -1,9 +1,5 @@
 package it.jpack.impl;
 
-import it.jpack.impl.ByteBufferArrayFactory;
-import it.jpack.impl.ByteBufferBuilder;
-import it.jpack.impl.ByteBufferArray;
-import it.jpack.impl.ByteBufferRepository;
 import it.jpack.TestPointer1;
 import it.jpack.TestPointer2;
 import static org.junit.Assert.assertEquals;
@@ -11,7 +7,7 @@ import org.junit.Test;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public class ByteBufferBuilderTest {
 

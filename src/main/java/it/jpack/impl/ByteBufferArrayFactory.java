@@ -7,7 +7,7 @@ import javassist.CtClass;
 
 /**
  *
- * @author list
+ * @author fbaro
  * @param <T>
  */
 public class ByteBufferArrayFactory<T extends StructPointer<T>> implements StructArrayFactory<T> {

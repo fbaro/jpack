@@ -7,7 +7,7 @@ import javassist.ClassPool;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public class ByteBufferRepository implements StructRepository {
 

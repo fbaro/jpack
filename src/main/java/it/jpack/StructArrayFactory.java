@@ -2,7 +2,7 @@ package it.jpack;
 
 /**
  *
- * @author list
+ * @author fbaro
  * @param <T>
  */
 public interface StructArrayFactory<T extends StructPointer<T>> {

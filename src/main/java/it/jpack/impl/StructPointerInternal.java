@@ -4,7 +4,7 @@ import it.jpack.StructPointer;
 
 /**
  *
- * @author list
+ * @author fbaro
  */
 public interface StructPointerInternal<T extends StructPointer<T>> extends StructPointer<T> {
     int getFieldPosition(int offset);
