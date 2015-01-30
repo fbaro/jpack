@@ -8,6 +8,7 @@ repositories {
 }
 
 group = 'com.github.fbaro'
+version = '0.1.0'
 
 dependencies {
     compile 'org.javassist:javassist:3.19.0-GA'
