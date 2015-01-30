@@ -33,7 +33,7 @@ public abstract class JavassistRepository implements StructRepository {
     }
 
     protected abstract <T extends StructPointer<T>> JavassistArrayFactory<T> newFactory(Class<T> pointerInterface);
-    
+
     public ClassPool getClassPool() {
         return classPool;
     }

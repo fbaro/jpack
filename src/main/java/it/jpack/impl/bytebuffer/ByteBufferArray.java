@@ -21,7 +21,7 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     private final int structSize;
     private final int length;
 
-    public ByteBufferArray(ByteBuffer buffer, int structSize, Class<T> pointerInterface, Class<? extends T> pointerImplementation) {
+    ByteBufferArray(ByteBuffer buffer, int structSize, Class<T> pointerInterface, Class<? extends T> pointerImplementation) {
         this.buffer = buffer;
         this.structSize = structSize;
         this.length = buffer.capacity() / structSize;
@@ -122,6 +122,10 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     @Override
     public void putChar(int offset, char value) {
         buffer.putChar(offset, value);
+    }
+
+    @Override
+    public void free() {
     }
 
     @Override

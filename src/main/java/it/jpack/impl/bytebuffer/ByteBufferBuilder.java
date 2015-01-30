@@ -2,7 +2,6 @@ package it.jpack.impl.bytebuffer;
 
 import it.jpack.StructPointer;
 import it.jpack.impl.JavassistBuilder;
-import it.jpack.impl.JavassistRepository;
 import javassist.ClassPool;
 import javassist.CtClass;
 
@@ -13,7 +12,7 @@ import javassist.CtClass;
  */
 public class ByteBufferBuilder<T extends StructPointer<T>> extends JavassistBuilder<T, ByteBufferArrayFactory<T>> {
 
-    public ByteBufferBuilder(JavassistRepository repository, Class<T> pointerInterface, ClassPool cPool, String className) {
+    public ByteBufferBuilder(ByteBufferRepository repository, Class<T> pointerInterface, ClassPool cPool, String className) {
         super(repository, pointerInterface, cPool, className);
     }
 

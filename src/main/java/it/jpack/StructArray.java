@@ -9,4 +9,5 @@ public interface StructArray<T> {
     T newPointer();
     int getLength();
     int getStructSize();
+    void free();
 }
