@@ -13,4 +13,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface StructField {
     int position() default Integer.MAX_VALUE;
+    int length() default 0;
 }

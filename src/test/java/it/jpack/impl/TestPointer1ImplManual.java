@@ -7,7 +7,7 @@ import it.jpack.TestPointer1;
  * @author fbaro
  */
 public final class TestPointer1ImplManual extends AbstractByteBufferPointer<TestPointer1> implements TestPointer1 {
-    
+
     public TestPointer1ImplManual(ByteBufferArray<?> array, StructPointerInternal<?> parentPointer, int parentOffset) {
         super(array, parentPointer, parentOffset);
     }

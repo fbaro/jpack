@@ -83,16 +83,29 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
         }
     }
 
-    private void addPrimitive(String name, String fieldType, int fieldSize) throws IllegalStateException {
+    private void addPrimitive(String name, String type, int fieldSize) throws IllegalStateException {
         try {
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "getFieldPosition(" + offset + ")";
-            String cFieldType = Character.toUpperCase(fieldType.charAt(0)) + fieldType.substring(1);
-            ctClass.addMethod(CtNewMethod.make("public " + fieldType + " get" + cName + "() { return array.get" + cFieldType + "(" + cOffset + "); }", ctClass));
-            ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + fieldType + " value) { return array.put" + cFieldType + "(" + cOffset + ", value); }", ctClass));
+            String cType = Character.toUpperCase(type.charAt(0)) + type.substring(1);
+            ctClass.addMethod(CtNewMethod.make("public " + type + " get" + cName + "() { return array.get" + cType + "(" + cOffset + "); }", ctClass));
+            ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + type + " value) { return array.put" + cType + "(" + cOffset + ", value); }", ctClass));
             offset += align(fieldSize);
         } catch (CannotCompileException ex) {
-            throw new IllegalStateException("Error adding " + fieldType + " field " + name, ex);
+            throw new IllegalStateException("Error adding " + type + " field " + name, ex);
+        }
+    }
+
+    private void addPrimitiveArray(String name, String type, int fieldSize, int length) throws IllegalStateException {
+        try {
+            String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            String cOffset = "i * " + fieldSize + " + getFieldPosition(" + offset + ")";
+            String cType = Character.toUpperCase(type.charAt(0)) + type.substring(1);
+            ctClass.addMethod(CtNewMethod.make("public " + type + " get" + cName + "(int i) { return array.get" + cType + "(" + cOffset + "); }", ctClass));
+            ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(int i, " + type + " value) { return array.put" + cType + "(" + cOffset + ", value); }", ctClass));
+            offset += align(fieldSize * length);
+        } catch (CannotCompileException ex) {
+            throw new IllegalStateException("Error adding " + type + " field " + name, ex);
         }
     }
 
@@ -131,12 +144,14 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
         return builder.build();
     }
 
-    private static boolean isSetterSignature(Method m) {
-        return m.getName().startsWith("set") && m.getParameterTypes().length == 1 && m.getReturnType() == Void.TYPE;
+    private static boolean isGetterSignature(Method m) {
+        return m.getName().startsWith("get") && !(m.getReturnType() == Void.TYPE)
+                && (m.getParameterTypes().length == 0 || (m.getParameterTypes().length == 1 && m.getParameterTypes()[0] == Integer.TYPE));
     }
 
-    private static boolean isGetterSignature(Method m) {
-        return m.getName().startsWith("get") && m.getParameterTypes().length == 0 && !(m.getReturnType() == Void.TYPE);
+    private static boolean isSetterSignature(Method m) {
+        return m.getName().startsWith("set") && (m.getReturnType() == Void.TYPE)
+                && (m.getParameterTypes().length == 1 || (m.getParameterTypes().length == 2 && m.getParameterTypes()[0] == Integer.TYPE));
     }
 
     private static int getAlignment(Struct annotation) {
@@ -167,14 +182,19 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
         public final String name;
         public final Class<?> type;
         public final int position;
+        public final int length;
         public final boolean hasGetter;
         public final boolean hasSetter;
         public final TypeHelper typeHelper;
 
-        private PropertyInfo(String name, Class<?> type, int position, boolean hasGetter, boolean hasSetter, TypeHelper typeHelper) {
+        private PropertyInfo(String name, Class<?> type, int position, int length, boolean hasGetter, boolean hasSetter, TypeHelper typeHelper) {
+            if (length < 0) {
+                throw new IllegalArgumentException("Array field length must be positive");
+            }
             this.name = name;
             this.type = type;
             this.position = position;
+            this.length = length;
             this.hasGetter = hasGetter;
             this.hasSetter = hasSetter;
             this.typeHelper = typeHelper;
@@ -184,14 +204,20 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             String name = Introspector.decapitalize(m.getName().substring(3));
             Class<?> type = m.getReturnType();
             StructField annotation = m.getAnnotation(StructField.class);
-            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), true, false, findHelper(name, type));
+            return new PropertyInfo(name, type, 
+                    annotation == null ? Integer.MAX_VALUE : annotation.position(), 
+                    annotation == null ? 0 : annotation.length(),
+                    true, false, findHelper(name, type));
         }
 
         public static PropertyInfo forSetter(Method m) {
             String name = Introspector.decapitalize(m.getName().substring(3));
-            Class<?> type = m.getParameterTypes()[0];
+            Class<?> type = m.getParameterTypes()[m.getParameterTypes().length - 1];
             StructField annotation = m.getAnnotation(StructField.class);
-            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), false, true, findHelper(name, type));
+            return new PropertyInfo(name, type, 
+                    annotation == null ? Integer.MAX_VALUE : annotation.position(),
+                    annotation == null ? 0 : annotation.length(),
+                    false, true, findHelper(name, type));
         }
 
         private static TypeHelper findHelper(String name, Class<?> type) {
@@ -207,13 +233,22 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             if (!this.name.equals(other.name)) {
                 throw new IllegalStateException("Property name mismatch");
             }
-            if (this.position != Integer.MAX_VALUE && other.position != Integer.MAX_VALUE && this.position != other.position) {
-                throw new IllegalArgumentException("Field position mismatch for property " + name);
-            }
             if (this.type != other.type) {
                 throw new IllegalArgumentException("Type mismatch for property " + name);
             }
-            return new PropertyInfo(name, type, position, true, true, typeHelper);
+            if (this.typeHelper != other.typeHelper) {
+                throw new IllegalStateException("Type helper mismatch for property " + name);
+            }
+            if (this.position != Integer.MAX_VALUE && other.position != Integer.MAX_VALUE && this.position != other.position) {
+                throw new IllegalArgumentException("Field position mismatch for property " + name);
+            }
+            if (this.length != 0 && other.length != 0 && this.length != other.length) {
+                throw new IllegalStateException("Array length mismatch for property " + name);
+            }
+            return new PropertyInfo(name, type, 
+                    this.position == Integer.MAX_VALUE ? other.position : this.position,
+                    this.length == 0 ? other.length : this.length,
+                    this.hasGetter || other.hasGetter, this.hasSetter || other.hasSetter, typeHelper);
         }
 
         @Override
@@ -223,7 +258,11 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
 
         public void addTo(ByteBufferBuilder<?> builder) {
             if (type.isPrimitive()) {
-                builder.addPrimitive(name, type.getSimpleName(), typeHelper.getBitSize() / 8);
+                if (length == 0 || length == 1) {
+                    builder.addPrimitive(name, type.getSimpleName(), typeHelper.getBitSize() / 8);
+                } else {
+                    builder.addPrimitiveArray(name, type.getSimpleName(), typeHelper.getBitSize() / 8, length);
+                }
             } else {
                 builder.addStruct(name, (Class) type);
             }

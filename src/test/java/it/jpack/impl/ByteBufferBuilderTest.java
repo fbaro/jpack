@@ -4,6 +4,7 @@ import it.jpack.StructPointer;
 import it.jpack.TestPointer1;
 import it.jpack.TestPointer2;
 import it.jpack.TestPointer3;
+import it.jpack.TestPointer4;
 import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -82,6 +83,29 @@ public class ByteBufferBuilderTest {
     @Test
     public void verifyAllPrimitiveTypesWork() {
         ByteBufferArray<AllPrimitiveTypes> arr = REPO.newArray(AllPrimitiveTypes.class, 10);
+    }
+
+    @Test
+    public void verifySimplePrimitiveArray() {
+        ByteBufferArray<TestPointer4> arr = REPO.newArray(TestPointer4.class, 10);
+        assertEquals(64, arr.getStructSize());
+        TestPointer4 p = arr.newPointer();
+        for (int i = 0; i < 10; i++) {
+            p.at(i);
+            for (int j = 0; j < 8; j++) {
+                try {
+                    p.setValue(j, (i + 1) * (j + 20));
+                } catch (RuntimeException ex) {
+                    throw new IllegalStateException("Error at " + i + "," + j, ex);
+                }
+            }
+        }
+        for (int i = 0; i < 10; i++) {
+            p.at(i);
+            for (int j = 0; j < 8; j++) {
+                assertEquals((i + 1) * (j + 20), p.getValue(j));
+            }
+        }
     }
 
     public interface AllPrimitiveTypes extends StructPointer<AllPrimitiveTypes> {
