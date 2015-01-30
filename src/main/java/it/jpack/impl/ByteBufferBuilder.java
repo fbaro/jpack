@@ -1,14 +1,16 @@
 package it.jpack.impl;
 
 import it.jpack.StructBuilder;
+import it.jpack.StructField;
 import it.jpack.StructPointer;
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
 import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -23,6 +25,8 @@ import javassist.NotFoundException;
  * @param <T>
  */
 public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuilder<T> {
+
+    private static final List<Method> STRUCT_POINTER_METHODS = Arrays.asList(StructPointer.class.getMethods());
 
     protected final ByteBufferRepository repository;
     protected final ClassPool cPool;
@@ -110,47 +114,91 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
     }        
 
     public static <T extends StructPointer<T>> ByteBufferArrayFactory<T> build(ByteBufferRepository repository, Class<T> pointerInterface) {
-        try {
-            ByteBufferBuilder<T> builder = new ByteBufferBuilder<>(repository, pointerInterface, repository.getClassPool(), pointerInterface.getName() + "Impl");
-            BeanInfo beanInfo = Introspector.getBeanInfo(pointerInterface);
-            List<PropertyInfo> properties = new ArrayList<>();
-            for (PropertyDescriptor pd : beanInfo.getPropertyDescriptors()) {
-                properties.add(PropertyInfo.create(pd));
+        ByteBufferBuilder<T> builder = new ByteBufferBuilder<>(repository, pointerInterface, repository.getClassPool(), pointerInterface.getName() + "Impl");
+        Map<String, PropertyInfo> properties = new LinkedHashMap<>();
+        for (Method m : pointerInterface.getMethods()) {
+            if (STRUCT_POINTER_METHODS.contains(m)) {
+                continue;
             }
-            Collections.sort(properties);
-            for (PropertyInfo pi : properties) {
-                pi.addTo(builder);
+            PropertyInfo newInfo;
+            if (isGetterSignature(m)) {
+                newInfo = PropertyInfo.forGetter(m);
+            } else if (isSetterSignature(m)) {
+                newInfo = PropertyInfo.forSetter(m);
+            } else {
+                throw new IllegalArgumentException("Method signature not recognized: " + m);
             }
-            return builder.build();
-        } catch (IntrospectionException ex) {
-            throw new IllegalArgumentException("Error accessing " + pointerInterface, ex);
+            PropertyInfo oldInfo = properties.get(newInfo.name);
+            if (oldInfo != null) {
+                properties.put(newInfo.name, newInfo.merge(oldInfo));
+            } else {
+                properties.put(newInfo.name, newInfo);
+            }
         }
+        List<PropertyInfo> sortedProperties = new ArrayList<>(properties.values());
+        Collections.sort(sortedProperties);
+        for (PropertyInfo pi : sortedProperties) {
+            pi.addTo(builder);
+        }
+        return builder.build();
+    }
+
+    private static boolean isSetterSignature(Method m) {
+        return m.getName().startsWith("set") && m.getParameterTypes().length == 1 && m.getReturnType() == Void.TYPE;
+    }
+
+    private static boolean isGetterSignature(Method m) {
+        return m.getName().startsWith("get") && m.getParameterTypes().length == 0 && !(m.getReturnType() == Void.TYPE);
     }
 
     private static final class PropertyInfo implements Comparable<PropertyInfo> {
         public final String name;
         public final Class<?> type;
-        public final int index;
+        public final int position;
+        public boolean hasGetter;
+        public boolean hasSetter;
 
-        public PropertyInfo(String name, Class<?> type, int index) {
+        private PropertyInfo(String name, Class<?> type, int position, boolean hasGetter, boolean hasSetter) {
             this.name = name;
             this.type = type;
-            this.index = index;
+            this.position = position;
+            this.hasGetter = hasGetter;
+            this.hasSetter = hasSetter;
         }
 
-        public static PropertyInfo create(PropertyDescriptor pd) throws IntrospectionException {
-            if (pd.getReadMethod() == null || pd.getWriteMethod() == null) {
-                throw new IntrospectionException("Property must have both read and write methods: " + pd.getName());
+        public static PropertyInfo forGetter(Method m) {
+            String name = Introspector.decapitalize(m.getName().substring(3));
+            Class<?> type = m.getReturnType();
+            StructField annotation = m.getAnnotation(StructField.class);
+            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), true, false);
+        }
+
+        public static PropertyInfo forSetter(Method m) {
+            String name = Introspector.decapitalize(m.getName().substring(3));
+            Class<?> type = m.getParameterTypes()[0];
+            StructField annotation = m.getAnnotation(StructField.class);
+            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), false, true);
+        }
+
+        public PropertyInfo merge(PropertyInfo other) {
+            if (!this.name.equals(other.name)) {
+                throw new IllegalStateException("Property name mismatch");
             }
-            return new PropertyInfo(pd.getName(), pd.getPropertyType(), Integer.MAX_VALUE);
+            if (this.position != Integer.MAX_VALUE && other.position != Integer.MAX_VALUE && this.position != other.position) {
+                throw new IllegalArgumentException("Field position mismatch for property " + name);
+            }
+            if (this.type != other.type) {
+                throw new IllegalArgumentException("Type mismatch for property " + name);
+            }
+            return new PropertyInfo(name, type, position, true, true);
         }
 
         @Override
         public int compareTo(PropertyInfo o) {
-            return Integer.compare(this.index, o.index);
+            return Integer.compare(this.position, o.position);
         }
     
-        public void addTo(ByteBufferBuilder<?> builder) throws IntrospectionException {
+        public void addTo(ByteBufferBuilder<?> builder) {
             if (Integer.TYPE == type) {
                 builder.addInt(name);
             } else if (Double.TYPE == type) {
@@ -162,13 +210,13 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
             } else if (StructPointer.class.isAssignableFrom(type)) {
                 builder.addStruct(name, (Class) type);
             } else {
-                throw new IntrospectionException("Unsupported type: " + type);
+                throw new IllegalArgumentException("Unsupported type " + type + " for property " + name);
             }
         }
 
         @Override
         public String toString() {
-            return "PropertyInfo{" + "name=" + name + ", type=" + type + ", index=" + index + '}';
+            return "PropertyInfo{" + "name=" + name + ", type=" + type + ", index=" + position + '}';
         }
     }
 }
