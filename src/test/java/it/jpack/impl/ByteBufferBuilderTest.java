@@ -56,7 +56,7 @@ public class ByteBufferBuilderTest {
     @Test
     public void verifyComplexClassIntrospectiveCreation() {
         ByteBufferArray<TestPointer3> arr = REPO.newArray(TestPointer3.class, 10);
-        assertEquals(36, arr.getStructSize());
+        assertEquals(40, arr.getStructSize());
         TestPointer3 p = arr.newPointer();
         for (int i = 1; i <= 10; i++) {
             p.at(i - 1).setValue(i);

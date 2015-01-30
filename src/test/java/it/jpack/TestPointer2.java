@@ -4,6 +4,7 @@ package it.jpack;
  *
  * @author fbaro
  */
+@Struct(align = 4)
 public interface TestPointer2 extends StructPointer<TestPointer2> {
     float getFloat();
     void setFloat(float value);

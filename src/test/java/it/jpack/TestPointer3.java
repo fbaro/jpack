@@ -4,6 +4,7 @@ package it.jpack;
  *
  * @author list
  */
+@Struct(align = 8)
 public interface TestPointer3 extends StructPointer<TestPointer3> {
 
     TestPointer2 getP1();
