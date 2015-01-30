@@ -34,6 +34,7 @@ class TypeHelper {
     public static final TypeHelper TLong = new TypeHelper(Long.SIZE, Long.TYPE);
     public static final TypeHelper TFloat = new TypeHelper(Float.SIZE, Float.TYPE);
     public static final TypeHelper TDouble = new TypeHelper(Double.SIZE, Double.TYPE);
+    public static final TypeHelper TChar = new TypeHelper(Character.SIZE, Character.TYPE);
     public static final TypeHelper TPointer = new TypeHelper(0, StructPointer.class);
 
 }

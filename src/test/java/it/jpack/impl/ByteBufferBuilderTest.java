@@ -1,5 +1,6 @@
 package it.jpack.impl;
 
+import it.jpack.StructPointer;
 import it.jpack.TestPointer1;
 import it.jpack.TestPointer2;
 import it.jpack.TestPointer3;
@@ -76,5 +77,27 @@ public class ByteBufferBuilderTest {
             assertEquals(i * 5   , p.getP2().getInner().getInt());
             assertEquals(i * 6.0 , p.getP2().getInner().getDouble(), 0.0);
         }
+    }
+
+    @Test
+    public void verifyAllPrimitiveTypesWork() {
+        ByteBufferArray<AllPrimitiveTypes> arr = REPO.newArray(AllPrimitiveTypes.class, 10);
+    }
+
+    public interface AllPrimitiveTypes extends StructPointer<AllPrimitiveTypes> {
+        public byte getV1();
+        public void setV1(byte value);
+        public short getV2();
+        public void setV2(short value);
+        public int getV3();
+        public void setV3(int value);
+        public long getV4();
+        public void setV4(long value);
+        public float getV5();
+        public void setV5(float value);
+        public double getV6();
+        public void setV6(double value);
+        public char getV7();
+        public void setV7(char value);
     }
 }

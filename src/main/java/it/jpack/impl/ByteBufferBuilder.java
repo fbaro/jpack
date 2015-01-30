@@ -28,7 +28,7 @@ import javassist.NotFoundException;
 public class ByteBufferBuilder<T extends StructPointer<T>> {
 
     private static final List<Method> STRUCT_POINTER_METHODS = Arrays.asList(StructPointer.class.getMethods());
-    private static final List<TypeHelper> PRIMITIVE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TPointer);
+    private static final List<TypeHelper> PRIMITIVE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TChar, TPointer);
 
     protected final ByteBufferRepository repository;
     protected final ClassPool cPool;
@@ -92,9 +92,9 @@ public class ByteBufferBuilder<T extends StructPointer<T>> {
             ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + fieldType + " value) { return array.put" + cFieldType + "(" + cOffset + ", value); }", ctClass));
             offset += align(fieldSize);
         } catch (CannotCompileException ex) {
-            throw new IllegalStateException("Error adding int field " + name, ex);
+            throw new IllegalStateException("Error adding " + fieldType + " field " + name, ex);
         }
-    }        
+    }
 
     private int align(int size) {
         int rem = size % alignment;

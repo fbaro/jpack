@@ -9,16 +9,32 @@ import it.jpack.StructPointer;
  */
 public interface StructArrayInternal<T extends StructPointer<T>> extends StructArray<T> {
 
-    public int getInt(int offset);
+    byte getByte(int offset);
 
-    public void putInt(int offset, int value);
+    void putByte(int offset, byte value);
 
-    public double getDouble(int offset);
+    short getShort(int offset);
 
-    public void putDouble(int offset, double value);
+    void putShort(int offset, short value);
 
-    public float getFloat(int offset);
+    int getInt(int offset);
 
-    public void putFloat(int offset, float value);
+    void putInt(int offset, int value);
+
+    long getLong(int offset);
+
+    void putLong(int offset, long value);
+
+    float getFloat(int offset);
+
+    void putFloat(int offset, float value);
+
+    double getDouble(int offset);
+
+    void putDouble(int offset, double value);
+
+    char getChar(int offset);
+
+    void putChar(int offset, char value);
 
 }

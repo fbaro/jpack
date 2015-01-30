@@ -53,6 +53,26 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     }
 
     @Override
+    public byte getByte(int offset) {
+        return buffer.get(offset);
+    }
+
+    @Override
+    public void putByte(int offset, byte value) {
+        buffer.put(offset, value);
+    }
+
+    @Override
+    public short getShort(int offset) {
+        return buffer.getShort(offset);
+    }
+
+    @Override
+    public void putShort(int offset, short value) {
+        buffer.putShort(offset, value);
+    }
+
+    @Override
     public int getInt(int offset) {
         return buffer.getInt(offset);
     }
@@ -60,6 +80,16 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     @Override
     public void putInt(int offset, int value) {
         buffer.putInt(offset, value);
+    }
+
+    @Override
+    public long getLong(int offset) {
+        return buffer.getLong(offset);
+    }
+
+    @Override
+    public void putLong(int offset, long value) {
+        buffer.putLong(offset, value);
     }
 
     @Override
@@ -80,6 +110,16 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     @Override
     public void putFloat(int offset, float value) {
         buffer.putFloat(offset, value);
+    }
+
+    @Override
+    public char getChar(int offset) {
+        return buffer.getChar(offset);
+    }
+
+    @Override
+    public void putChar(int offset, char value) {
+        buffer.putChar(offset, value);
     }
 
     @Override
