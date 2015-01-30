@@ -1,9 +1,9 @@
 package it.jpack.impl;
 
 import it.jpack.Struct;
-import it.jpack.StructBuilder;
 import it.jpack.StructField;
 import it.jpack.StructPointer;
+import static it.jpack.impl.TypeHelper.*;
 import java.beans.Introspector;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,9 +25,10 @@ import javassist.NotFoundException;
  * @author fbaro
  * @param <T>
  */
-public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuilder<T> {
+public class ByteBufferBuilder<T extends StructPointer<T>> {
 
     private static final List<Method> STRUCT_POINTER_METHODS = Arrays.asList(StructPointer.class.getMethods());
+    private static final List<TypeHelper> PRIMITIVE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TPointer);
 
     protected final ByteBufferRepository repository;
     protected final ClassPool cPool;
@@ -54,28 +55,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
         }
     }
 
-    @Override
-    public void addDouble(String name) {
-        addPrimitive(name, "double", 8);
-    }
-
-    @Override
-    public void addLong(String name) {
-        addPrimitive(name, "long", 8);
-    }
-
-    @Override
-    public void addFloat(String name) {
-        addPrimitive(name, "float", 4);
-    }
-
-    @Override
-    public void addInt(String name) {
-        addPrimitive(name, "int", 4);
-    }
-
-    @Override
-    public <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface) {
+    private <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface) {
         ByteBufferArrayFactory<S> innerFactory = repository.getFactory(pointerInterface);
         try {
             ctClass.addField(new CtField(innerFactory.getCtImplementation(), name, ctClass));
@@ -90,8 +70,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
         }
     }
 
-    @Override
-    public ByteBufferArrayFactory<T> build() {
+    private ByteBufferArrayFactory<T> build() {
         try {
             ctClass.addMethod(CtNewMethod.make("public int getStructSize() { return " + offset + "; }", ctClass));
             ctClass.addConstructor(CtNewConstructor.make("public " + ctClass.getSimpleName() + "(" + 
@@ -104,7 +83,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
         }
     }
 
-    protected void addPrimitive(String name, String fieldType, int fieldSize) throws IllegalStateException {
+    private void addPrimitive(String name, String fieldType, int fieldSize) throws IllegalStateException {
         try {
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "getFieldPosition(" + offset + ")";
@@ -188,29 +167,40 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
         public final String name;
         public final Class<?> type;
         public final int position;
-        public boolean hasGetter;
-        public boolean hasSetter;
+        public final boolean hasGetter;
+        public final boolean hasSetter;
+        public final TypeHelper typeHelper;
 
-        private PropertyInfo(String name, Class<?> type, int position, boolean hasGetter, boolean hasSetter) {
+        private PropertyInfo(String name, Class<?> type, int position, boolean hasGetter, boolean hasSetter, TypeHelper typeHelper) {
             this.name = name;
             this.type = type;
             this.position = position;
             this.hasGetter = hasGetter;
             this.hasSetter = hasSetter;
+            this.typeHelper = typeHelper;
         }
 
         public static PropertyInfo forGetter(Method m) {
             String name = Introspector.decapitalize(m.getName().substring(3));
             Class<?> type = m.getReturnType();
             StructField annotation = m.getAnnotation(StructField.class);
-            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), true, false);
+            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), true, false, findHelper(name, type));
         }
 
         public static PropertyInfo forSetter(Method m) {
             String name = Introspector.decapitalize(m.getName().substring(3));
             Class<?> type = m.getParameterTypes()[0];
             StructField annotation = m.getAnnotation(StructField.class);
-            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), false, true);
+            return new PropertyInfo(name, type, annotation == null ? Integer.MAX_VALUE : annotation.position(), false, true, findHelper(name, type));
+        }
+
+        private static TypeHelper findHelper(String name, Class<?> type) {
+            for (TypeHelper helper : PRIMITIVE_HELPERS) {
+                if (helper.matches(type)) {
+                    return helper;
+                }
+            }
+            throw new IllegalArgumentException("Unsupported type " + type + " for property " + name); 
         }
 
         public PropertyInfo merge(PropertyInfo other) {
@@ -223,7 +213,7 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
             if (this.type != other.type) {
                 throw new IllegalArgumentException("Type mismatch for property " + name);
             }
-            return new PropertyInfo(name, type, position, true, true);
+            return new PropertyInfo(name, type, position, true, true, typeHelper);
         }
 
         @Override
@@ -232,18 +222,10 @@ public class ByteBufferBuilder<T extends StructPointer<T>> implements StructBuil
         }
 
         public void addTo(ByteBufferBuilder<?> builder) {
-            if (Integer.TYPE == type) {
-                builder.addInt(name);
-            } else if (Double.TYPE == type) {
-                builder.addDouble(name);
-            } else if (Float.TYPE == type) {
-                builder.addFloat(name);
-            } else if (Long.TYPE == type) {
-                builder.addLong(name);
-            } else if (StructPointer.class.isAssignableFrom(type)) {
-                builder.addStruct(name, (Class) type);
+            if (type.isPrimitive()) {
+                builder.addPrimitive(name, type.getSimpleName(), typeHelper.getBitSize() / 8);
             } else {
-                throw new IllegalArgumentException("Unsupported type " + type + " for property " + name);
+                builder.addStruct(name, (Class) type);
             }
         }
 
