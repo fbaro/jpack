@@ -1,5 +1,6 @@
 package it.jpack.impl;
 
+import it.jpack.impl.bytebuffer.ByteBufferArray;
 import it.jpack.TestPointer1;
 import it.jpack.TestPointer2;
 
@@ -7,7 +8,7 @@ import it.jpack.TestPointer2;
  *
  * @author fbaro
  */
-public final class TestPointer2ImplManual extends AbstractByteBufferPointer<TestPointer2> implements TestPointer2 {
+public final class TestPointer2ImplManual extends AbstractPointer<TestPointer2> implements TestPointer2 {
 
     private final TestPointer1 inner;
 

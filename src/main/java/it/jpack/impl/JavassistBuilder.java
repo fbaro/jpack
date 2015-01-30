@@ -46,7 +46,7 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
             this.cPool = cPool;
             this.alignment = getAlignment(pointerInterface.getAnnotation(Struct.class));
 
-            ctClass = cPool.makeClass(className, cPool.get(AbstractByteBufferPointer.class.getName()));
+            ctClass = cPool.makeClass(className, cPool.get(AbstractPointer.class.getName()));
             ctClass.setModifiers(Modifier.FINAL + Modifier.PUBLIC);
             ctClass.addInterface(cPool.get(pointerInterface.getName()));
             constructorBody.append("super(array, parentPointer, parentOffset);");

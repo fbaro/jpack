@@ -1,12 +1,13 @@
 package it.jpack.impl;
 
+import it.jpack.impl.bytebuffer.ByteBufferArray;
 import it.jpack.TestPointer1;
 
 /**
  *
  * @author fbaro
  */
-public final class TestPointer1ImplManual extends AbstractByteBufferPointer<TestPointer1> implements TestPointer1 {
+public final class TestPointer1ImplManual extends AbstractPointer<TestPointer1> implements TestPointer1 {
 
     public TestPointer1ImplManual(ByteBufferArray<?> array, StructPointerInternal<?> parentPointer, int parentOffset) {
         super(array, parentPointer, parentOffset);

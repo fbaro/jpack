@@ -1,6 +1,7 @@
-package it.jpack.impl;
+package it.jpack.impl.bytebuffer;
 
 import it.jpack.StructPointer;
+import it.jpack.impl.JavassistArrayFactory;
 import java.nio.ByteBuffer;
 import javassist.CtClass;
 

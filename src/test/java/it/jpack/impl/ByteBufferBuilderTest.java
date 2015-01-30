@@ -1,5 +1,6 @@
 package it.jpack.impl;
 
+import it.jpack.impl.bytebuffer.ByteBufferRepository;
 import it.jpack.StructArray;
 import it.jpack.StructPointer;
 import it.jpack.TestPointer1;

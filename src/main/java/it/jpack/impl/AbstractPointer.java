@@ -7,20 +7,20 @@ import it.jpack.StructPointer;
  * @author fbaro
  * @param <T>
  */
-public abstract class AbstractByteBufferPointer<T extends StructPointer<T>> implements StructPointerInternal<T> {
+public abstract class AbstractPointer<T extends StructPointer<T>> implements StructPointerInternal<T> {
 
     protected final StructArrayInternal<?> array;
     protected final StructPointerInternal<?> parentPointer;
     protected final int parentOffset;
     protected int index = 0;
 
-    protected AbstractByteBufferPointer(StructArrayInternal<?> array, StructPointerInternal<?> parentPointer, int parentOffset) {
+    protected AbstractPointer(StructArrayInternal<?> array, StructPointerInternal<?> parentPointer, int parentOffset) {
         this.array = array;
         this.parentPointer = parentPointer;
         this.parentOffset = parentOffset;
     }
 
-    protected AbstractByteBufferPointer(ByteBufferArray<?> array) {
+    protected AbstractPointer(StructArrayInternal<?> array) {
         this(array, null, 0);
     }
 

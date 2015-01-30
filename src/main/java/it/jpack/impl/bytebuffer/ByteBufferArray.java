@@ -1,6 +1,8 @@
-package it.jpack.impl;
+package it.jpack.impl.bytebuffer;
 
 import it.jpack.StructPointer;
+import it.jpack.impl.StructArrayInternal;
+import it.jpack.impl.StructPointerInternal;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
