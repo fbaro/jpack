@@ -1,14 +1,5 @@
 package it.jpack;
 
-import it.jpack.Repositories;
-import it.jpack.StructArray;
-import it.jpack.StructPointer;
-import it.jpack.StructRepository;
-import it.jpack.TestPointer1;
-import it.jpack.TestPointer2;
-import it.jpack.TestPointer3;
-import it.jpack.TestPointer4;
-import it.jpack.TestPointer5;
 import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -147,6 +138,25 @@ public class GeneralTest {
                     assertEquals(i + j * 10, p.getArray().getInt());
                     assertEquals(i + j * 20.0, p.getArray().getDouble(), 0.0);
                 }
+            }
+        } finally {
+            arr.free();
+        }
+    }
+
+    @Test
+    public void verifyCharSequenceWorks() {
+        StructArray<TestPointer6> arr = REPO.newArray(TestPointer6.class, 10);
+        try {
+            assertEquals(28, arr.getStructSize());
+            TestPointer6 p = arr.newPointer();
+            for (int i = 0; i < 10; i++) {
+                p.at(i).setInt(i);
+                p.setSequence(String.format("%012d", i));
+            }
+            for (int i = 0; i < 10; i++) {
+                assertEquals(i, p.at(i).getInt());
+                assertEquals(String.format("%012d", i), p.getSequence().toString());
             }
         } finally {
             arr.free();

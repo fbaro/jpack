@@ -6,35 +6,63 @@ import it.jpack.StructPointer;
  *
  * @author list
  */
-class TypeHelper {
+abstract class TypeHelper {
 
-    private final int bitSize;
-    private final Class<?> type;
+    public abstract boolean matches(Class<?> inputType);
 
-    public TypeHelper(int bitSize, Class<?> type) {
-        this.bitSize = bitSize;
-        this.type = type;
+    public abstract void addTo(JavassistBuilder<?, ?> builder, String name, Class<?> inputType, int length);
+
+    private static class PrimitiveTypeHelper extends TypeHelper {
+        private final int bitSize;
+        private final Class<?> type;
+
+        public PrimitiveTypeHelper(int bitSize, Class<?> type) {
+            this.bitSize = bitSize;
+            this.type = type;
+        }
+
+        @Override
+        public boolean matches(Class<?> inputType) {
+            return type.isAssignableFrom(inputType);
+        }
+
+        @Override
+        public void addTo(JavassistBuilder<?, ?> builder, String name, Class<?> inputType, int length) {
+            if (length == 0 || length == 1) {
+                builder.addPrimitive(name, type.getSimpleName(), bitSize / 8);
+            } else {
+                builder.addPrimitiveArray(name, type.getSimpleName(), bitSize / 8, length);
+            }
+        }
     }
 
-    public int getBitSize() {
-        return bitSize;
-    }
+    public static final TypeHelper TByte = new PrimitiveTypeHelper(Byte.SIZE, Byte.TYPE);
+    public static final TypeHelper TShort = new PrimitiveTypeHelper(Short.SIZE, Short.TYPE);
+    public static final TypeHelper TInt = new PrimitiveTypeHelper(Integer.SIZE, Integer.TYPE);
+    public static final TypeHelper TLong = new PrimitiveTypeHelper(Long.SIZE, Long.TYPE);
+    public static final TypeHelper TFloat = new PrimitiveTypeHelper(Float.SIZE, Float.TYPE);
+    public static final TypeHelper TDouble = new PrimitiveTypeHelper(Double.SIZE, Double.TYPE);
+    public static final TypeHelper TChar = new PrimitiveTypeHelper(Character.SIZE, Character.TYPE);
+    public static final TypeHelper TPointer = new TypeHelper() {
+        @Override
+        public boolean matches(Class<?> inputType) {
+            return inputType.isInterface() && StructPointer.class.isAssignableFrom(inputType);
+        }
 
-    public Class<?> getType() {
-        return type;
-    }
+        @Override
+        public void addTo(JavassistBuilder<?, ?> builder, String name, Class<?> inputType, int length) {
+            builder.addStruct(name, (Class) inputType, length == 0 ? 1 : length);
+        }
+    };
+    public static final TypeHelper TCharSequence = new TypeHelper() {
+        @Override
+        public boolean matches(Class<?> inputType) {
+            return CharSequence.class.equals(inputType);
+        }
 
-    public boolean matches(Class<?> inputType) {
-        return type.isAssignableFrom(inputType);
-    }
-
-    public static final TypeHelper TByte = new TypeHelper(Byte.SIZE, Byte.TYPE);
-    public static final TypeHelper TShort = new TypeHelper(Short.SIZE, Short.TYPE);
-    public static final TypeHelper TInt = new TypeHelper(Integer.SIZE, Integer.TYPE);
-    public static final TypeHelper TLong = new TypeHelper(Long.SIZE, Long.TYPE);
-    public static final TypeHelper TFloat = new TypeHelper(Float.SIZE, Float.TYPE);
-    public static final TypeHelper TDouble = new TypeHelper(Double.SIZE, Double.TYPE);
-    public static final TypeHelper TChar = new TypeHelper(Character.SIZE, Character.TYPE);
-    public static final TypeHelper TPointer = new TypeHelper(0, StructPointer.class);
-
+        @Override
+        public void addTo(JavassistBuilder<?, ?> builder, String name, Class<?> inputType, int length) {
+            builder.addCharSequence(name, length);
+        }
+    };
 }

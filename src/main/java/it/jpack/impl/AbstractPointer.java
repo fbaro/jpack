@@ -44,4 +44,5 @@ public abstract class AbstractPointer<T extends StructPointer<T>> implements Str
     public final int getFieldPosition(int offset) {
         return (parentPointer == null ? 0 : parentPointer.getFieldPosition(parentOffset)) + index * getStructSize() + offset;
     }
+
 }

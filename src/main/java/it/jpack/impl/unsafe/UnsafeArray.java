@@ -134,11 +134,9 @@ public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInter
     @SuppressWarnings("restriction")
     private static Unsafe getUnsafe() {
         try {
-
             Field singleoneInstanceField = Unsafe.class.getDeclaredField("theUnsafe");
             singleoneInstanceField.setAccessible(true);
             return (Unsafe) singleoneInstanceField.get(null);
-
         } catch (IllegalArgumentException | SecurityException | NoSuchFieldException | IllegalAccessException e) {
             throw new ExceptionInInitializerError(e);
         }

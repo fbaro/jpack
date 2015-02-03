@@ -29,7 +29,7 @@ import javassist.NotFoundException;
 public abstract class JavassistBuilder<T extends StructPointer<T>, F extends JavassistArrayFactory<T>> {
 
     private static final List<Method> STRUCT_POINTER_METHODS = Arrays.asList(StructPointer.class.getMethods());
-    private static final List<TypeHelper> PRIMITIVE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TChar, TPointer);
+    private static final List<TypeHelper> PRIMITIVE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TChar, TCharSequence, TPointer);
 
     private final JavassistRepository repository;
     private final ClassPool cPool;
@@ -55,7 +55,7 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
         }
     }
 
-    private void addPrimitive(String name, String type, int fieldSize) throws IllegalStateException {
+    void addPrimitive(String name, String type, int fieldSize) throws IllegalStateException {
         try {
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "getFieldPosition(" + offset + ")";
@@ -68,7 +68,7 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
         }
     }
 
-    private void addPrimitiveArray(String name, String type, int fieldSize, int length) throws IllegalStateException {
+    void addPrimitiveArray(String name, String type, int fieldSize, int length) throws IllegalStateException {
         try {
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "i * " + fieldSize + " + getFieldPosition(" + offset + ")";
@@ -81,7 +81,23 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
         }
     }
 
-    private <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface, int length) {
+    void addCharSequence(String name, int length) {
+        try {
+            ctClass.addField(new CtField(cPool.get(CharSequenceImpl.class.getName()), name, ctClass));
+            constructorBody.append(String.format("this.%s = new it.jpack.impl.CharSequenceImpl(%d, %d, this);", name, length, offset));
+            
+            String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            ctClass.addMethod(CtNewMethod.make("public CharSequence get" + cName + "() { return this." + name + "; }", ctClass));
+            ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(CharSequence value) { this." + name + ".set(value); }", ctClass));
+            offset += align(length * Character.SIZE / 8);
+        } catch (CannotCompileException ex) {
+            throw new IllegalStateException("Error adding CharSequence field " + name, ex);
+        } catch (NotFoundException ex) {
+            throw new IllegalStateException("Error adding CharSequence field " + name, ex);
+        }
+    }
+
+    <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface, int length) {
         JavassistArrayFactory<S> innerFactory = repository.getFactory(pointerInterface);
         try {
             ctClass.addField(new CtField(innerFactory.getCtImplementation(), name, ctClass));
@@ -269,15 +285,7 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
         }
 
         public void addTo(JavassistBuilder<?, ?> builder) {
-            if (type.isPrimitive()) {
-                if (length == 0 || length == 1) {
-                    builder.addPrimitive(name, type.getSimpleName(), typeHelper.getBitSize() / 8);
-                } else {
-                    builder.addPrimitiveArray(name, type.getSimpleName(), typeHelper.getBitSize() / 8, length);
-                }
-            } else {
-                builder.addStruct(name, (Class) type, length == 0 ? 1 : length);
-            }
+            typeHelper.addTo(builder, name, type, length);
         }
 
         @Override
