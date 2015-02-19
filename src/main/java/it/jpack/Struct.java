@@ -6,7 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- *
+ * This annotation can be used to further qualify StructPointer instances.
+ * It is not compulsory, but is necessary to specify the default alignment of the fields
+ * in the structure.
  * @author fbaro
  */
 @Retention(RetentionPolicy.RUNTIME)

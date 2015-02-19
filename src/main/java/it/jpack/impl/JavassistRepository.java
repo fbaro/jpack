@@ -8,7 +8,7 @@ import javassist.ClassPool;
 
 /**
  *
- * @author Flavio
+ * @author fbaro
  */
 public abstract class JavassistRepository implements StructRepository {
 

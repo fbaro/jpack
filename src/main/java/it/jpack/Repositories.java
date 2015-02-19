@@ -5,7 +5,7 @@ import it.jpack.impl.unsafe.UnsafeRepository;
 
 /**
  *
- * @author Flavio
+ * @author fbaro
  */
 public class Repositories {
 

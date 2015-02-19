@@ -7,7 +7,7 @@ import javassist.CtClass;
 
 /**
  *
- * @author Flavio
+ * @author fbaro
  * @param <T>
  */
 public class ByteBufferBuilder<T extends StructPointer<T>> extends JavassistBuilder<T, ByteBufferArrayFactory<T>> {

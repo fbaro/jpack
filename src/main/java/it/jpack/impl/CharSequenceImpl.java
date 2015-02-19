@@ -2,7 +2,7 @@ package it.jpack.impl;
 
 /**
  *
- * @author Flavio
+ * @author fbaro
  */
 public final class CharSequenceImpl implements CharSequence {
     private final int length;

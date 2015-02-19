@@ -31,6 +31,9 @@ public abstract class AbstractPointer<T extends StructPointer<T>> implements Str
 
     @Override
     public final void setIndex(int index) {
+        if (index < 0 || index > array.getLength()) {
+            throw new ArrayIndexOutOfBoundsException(index);
+        }
         this.index = index;
     }
 

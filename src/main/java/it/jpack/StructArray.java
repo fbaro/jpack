@@ -1,7 +1,7 @@
 package it.jpack;
 
 /**
- *
+ * 
  * @author fbaro
  * @param <T>
  */
