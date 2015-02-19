@@ -38,4 +38,5 @@ jmh {
     warmupIterations = 5
     iterations = 10
     timeOnIteration = '1s'
+    //jvmArgs = '-XX:+UnlockDiagnosticVMOptions -XX:CompileCommand=print,*SimplePointerImpl.getValue1' //-XX:+PrintAssembly -XX:+PrintNMethods'
 }
