@@ -125,6 +125,15 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     }
 
     @Override
+    public String getString(int offset, int length) {
+        char[] data = new char[length];
+        for (int i = 0; i < length; i++) {
+            data[i] = buffer.getChar(offset + i * 2);
+        }
+        return new String(data);
+    }
+
+    @Override
     public void free() {
     }
 

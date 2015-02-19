@@ -38,4 +38,5 @@ public interface StructArrayInternal<T extends StructPointer<T>> extends StructA
 
     void putChar(int offset, char value);
 
+    String getString(int offset, int length);
 }

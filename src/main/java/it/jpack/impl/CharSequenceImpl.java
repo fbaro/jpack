@@ -42,12 +42,7 @@ public final class CharSequenceImpl implements CharSequence {
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder();
-        int iOffset = outer.index * outer.getStructSize() + outer.getFieldPosition(offset);
-        for (int i = 0; i < length; i++, iOffset += 2) {
-            ret.append(outer.array.getChar(iOffset));
-        }
-        return ret.toString();
+        return outer.array.getString(offset, length);
     }
-    
+
 }
