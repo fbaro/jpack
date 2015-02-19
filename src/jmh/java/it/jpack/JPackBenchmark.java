@@ -40,10 +40,10 @@ public class JPackBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public void accessTimesWithJPackArray() {
-        double s = Math.PI;
         for (int i = 0; i < PlainBenchmark.LENGTH; i++) {
             pointer.at(i);
-            s += pointer.getValue1() + pointer.getValue2();
+            pointer.getValue1();
+            pointer.getValue2();
         }
     }
 

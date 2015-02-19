@@ -38,10 +38,10 @@ public class PlainBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public void accessTimesWithPlainArray() {
-        double s = Math.PI;
         for (int i = 0; i < LENGTH; i++) {
             SimpleClass c = data[i];
-            s += c.getValue1() + c.getValue2();
+            c.getValue1();
+            c.getValue2();
         }
     }
 
