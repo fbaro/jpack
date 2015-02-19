@@ -148,7 +148,7 @@ public class GeneralTest {
     public void verifyCharSequenceWorks() {
         StructArray<TestPointer6> arr = REPO.newArray(TestPointer6.class, 10);
         try {
-            assertEquals(28, arr.getStructSize());
+            assertEquals(32, arr.getStructSize());
             TestPointer6 p = arr.newPointer();
             for (int i = 0; i < 10; i++) {
                 p.at(i).setInt(i);

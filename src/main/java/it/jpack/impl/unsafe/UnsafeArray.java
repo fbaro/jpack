@@ -116,6 +116,12 @@ public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInter
     }
 
     @Override
+    public void putString(int offset, String value) {
+        char[] data = value.toCharArray();
+        U.copyMemory(data, CHAR_ARRAY_BASE_OFFSET, null, address + offset, data.length * 2);
+    }
+
+    @Override
     public T newPointer() {
         try {
             return constructor.newInstance(this, null, 0);

@@ -22,7 +22,7 @@ public final class CharSequenceImpl implements CharSequence {
 
     @Override
     public char charAt(int index) {
-        return outer.array.getChar(outer.index * outer.getStructSize() + outer.getFieldPosition(offset) + 2 * index);
+        return outer.array.getChar(getArrayIndex() + 2 * index);
     }
 
     @Override
@@ -34,15 +34,22 @@ public final class CharSequenceImpl implements CharSequence {
         if (value.length() != length) {
             throw new IllegalArgumentException("Input length " + value.length() + ", required " + length);
         }
-        int iOffset = outer.index * outer.getStructSize() + outer.getFieldPosition(offset);
-        for (int i = 0; i < length; i++, iOffset += 2) {
-            outer.array.putChar(iOffset, value.charAt(i));
+        if (value instanceof String) {
+            outer.array.putString(getArrayIndex(), (String) value);
+        } else {
+            int iOffset = getArrayIndex();
+            for (int i = 0; i < length; i++, iOffset += 2) {
+                outer.array.putChar(iOffset, value.charAt(i));
+            }
         }
     }
 
     @Override
     public String toString() {
-        return outer.array.getString(offset, length);
+        return outer.array.getString(getArrayIndex(), length);
     }
 
+    private int getArrayIndex() {
+        return outer.index * outer.getStructSize() + outer.getFieldPosition(offset);
+    }
 }

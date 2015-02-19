@@ -134,6 +134,14 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     }
 
     @Override
+    public void putString(int offset, String value) {
+        final int l = value.length();
+        for (int i = 0; i < l; i++) {
+            buffer.putChar(offset + i * 2, value.charAt(i));
+        }
+    }
+
+    @Override
     public void free() {
     }
 
