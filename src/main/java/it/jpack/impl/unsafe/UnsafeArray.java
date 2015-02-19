@@ -38,6 +38,11 @@ public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInter
     }
 
     @Override
+    public Class<T> getPointerClass() {
+        return pointerInterface;
+    }
+
+    @Override
     public byte getByte(int offset) {
         return U.getByte(address + offset);
     }
@@ -136,7 +141,12 @@ public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInter
         try {
             Field singleoneInstanceField = Unsafe.class.getDeclaredField("theUnsafe");
             singleoneInstanceField.setAccessible(true);
-            return (Unsafe) singleoneInstanceField.get(null);
+            Unsafe ret = (Unsafe) singleoneInstanceField.get(null);
+            if (ret == null) {
+                throw new ExceptionInInitializerError("Unsafe not found");
+            } else {
+                return ret;
+            }
         } catch (IllegalArgumentException | SecurityException | NoSuchFieldException | IllegalAccessException e) {
             throw new ExceptionInInitializerError(e);
         }
