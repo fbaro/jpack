@@ -65,4 +65,15 @@ abstract class TypeHelper {
             builder.addCharSequence(name, length);
         }
     };
+    public static final TypeHelper TString = new TypeHelper() {
+        @Override
+        public boolean matches(Class<?> inputType) {
+            return String.class.equals(inputType);
+        }
+
+        @Override
+        public void addTo(JavassistBuilder<?, ?> builder, String name, Class<?> inputType, int length) {
+            builder.addString(name, length);
+        }
+    };
 }

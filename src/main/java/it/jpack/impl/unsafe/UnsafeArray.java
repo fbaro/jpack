@@ -16,6 +16,7 @@ import sun.misc.Unsafe;
 public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInternal<T> {
 
     static final Unsafe U = getUnsafe();
+    private static final int CHAR_ARRAY_BASE_OFFSET = U.arrayBaseOffset(char[].class);
 
     private final Class<T> pointerInterface;
     private final Class<? extends T> pointerImplementation;
@@ -110,6 +111,19 @@ public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInter
     @Override
     public void putChar(int offset, char value) {
         U.putChar(address + offset, value);
+    }
+
+    @Override
+    public String getString(int offset, int length) {
+        char[] data = new char[length];
+        U.copyMemory(null, address + offset, data, CHAR_ARRAY_BASE_OFFSET, length * 2);
+        return new String(data);
+    }
+
+    @Override
+    public void putString(int offset, String value) {
+        char[] data = value.toCharArray();
+        U.copyMemory(data, CHAR_ARRAY_BASE_OFFSET, null, address + offset, data.length * 2);
     }
 
     @Override
