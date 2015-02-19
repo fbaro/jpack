@@ -163,6 +163,25 @@ public class GeneralTest {
         }
     }
 
+    @Test
+    public void verifyStringWorks() {
+        StructArray<TestPointer7> arr = REPO.newArray(TestPointer7.class, 10);
+        try {
+            assertEquals(32, arr.getStructSize());
+            TestPointer7 p = arr.newPointer();
+            for (int i = 0; i < 10; i++) {
+                p.at(i).setInt(i);
+                p.setString(String.format("%012d", i));
+            }
+            for (int i = 0; i < 10; i++) {
+                assertEquals(i, p.at(i).getInt());
+                assertEquals(String.format("%012d", i), p.getString().toString());
+            }
+        } finally {
+            arr.free();
+        }
+    }
+
     public interface AllPrimitiveTypes extends StructPointer<AllPrimitiveTypes> {
         public byte getV1();
         public void setV1(byte value);

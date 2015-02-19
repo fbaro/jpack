@@ -29,7 +29,7 @@ import javassist.NotFoundException;
 public abstract class JavassistBuilder<T extends StructPointer<T>, F extends JavassistArrayFactory<T>> {
 
     private static final List<Method> STRUCT_POINTER_METHODS = Arrays.asList(StructPointer.class.getMethods());
-    private static final List<TypeHelper> PRIMITIVE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TChar, TCharSequence, TPointer);
+    private static final List<TypeHelper> TYPE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TChar, TCharSequence, TString, TPointer);
 
     private final JavassistRepository repository;
     private final ClassPool cPool;
@@ -94,6 +94,18 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
             throw new IllegalStateException("Error adding CharSequence field " + name, ex);
         } catch (NotFoundException ex) {
             throw new IllegalStateException("Error adding CharSequence field " + name, ex);
+        }
+    }
+
+    void addString(String name, int length) {
+        try {
+            String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            String cOffset = "getFieldPosition(" + offset + ")";
+            ctClass.addMethod(CtNewMethod.make("public String get" + cName + "() { return array.getString(" + cOffset + ", " + length + "); }", ctClass));
+            ctClass.addMethod(CtNewMethod.make("public void setString(String value) { if (value.length() != " + length + ") { throw new IllegalArgumentException(\"String length must be " + length + "\"); } return array.putString(" + cOffset + ", value); }", ctClass));
+            offset += align(length * Character.SIZE / 8);
+        } catch (CannotCompileException ex) {
+            throw new IllegalStateException("Error adding String field " + name, ex);
         }
     }
 
@@ -246,7 +258,7 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
         }
 
         private static TypeHelper findHelper(String name, Class<?> type) {
-            for (TypeHelper helper : PRIMITIVE_HELPERS) {
+            for (TypeHelper helper : TYPE_HELPERS) {
                 if (helper.matches(type)) {
                     return helper;
                 }
