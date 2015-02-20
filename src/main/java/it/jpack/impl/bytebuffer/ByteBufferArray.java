@@ -36,7 +36,7 @@ public class ByteBufferArray<T extends StructPointer<T>> implements StructArrayI
     }
 
     @Override
-    public Class<T> getPointerClass() {
+    public Class<T> getPointerInterface() {
         return pointerInterface;
     }
 

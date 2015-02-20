@@ -39,7 +39,7 @@ public class UnsafeArray<T extends StructPointer<T>> implements StructArrayInter
     }
 
     @Override
-    public Class<T> getPointerClass() {
+    public Class<T> getPointerInterface() {
         return pointerInterface;
     }
 

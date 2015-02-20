@@ -12,7 +12,7 @@
  * </p>
  * <pre><code>
  * 
- * public class MyPointer extends StructPointer{@literal <MyPointer>} {
+ * public interface MyPointer extends StructPointer{@literal <MyPointer>} {
  *     &#64;StructField(position = 0)
  *     int getFoo();
  *     void setFoo(int value);
@@ -26,8 +26,8 @@
  *     StructArray{@literal <MyPointer>} arr = repo.newArray(MyPointer.class, 16);
  *     MyPointer ptr = arr.newPointer();
  *     for (int i = 0; i &lt; arr.getLength(); i++) {
- *         ptr.setFoo(i);
- *         assertEquals(i, ptr.getFoo());
+ *         ptr.at(i).setFoo(i * 3);
+ *         assertEquals(i * 3, ptr.getFoo());
  *     }
  * }
  * </code></pre>
