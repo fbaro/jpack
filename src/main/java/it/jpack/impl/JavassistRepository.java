@@ -1,6 +1,7 @@
 package it.jpack.impl;
 
 import it.jpack.StructArray;
+import it.jpack.StructLayout;
 import it.jpack.StructPointer;
 import it.jpack.StructRepository;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,16 +24,21 @@ public abstract class JavassistRepository implements StructRepository {
 
     @Override
     public <T extends StructPointer<T>> JavassistArrayFactory<T> getFactory(Class<T> pointerInterface) {
+        return getFactory(pointerInterface, new DefaultStructLayout<>(pointerInterface));
+    }
+
+    @Override
+    public <T extends StructPointer<T>> JavassistArrayFactory<T> getFactory(Class<T> pointerInterface, StructLayout layout) {
         JavassistArrayFactory<T> ret = (JavassistArrayFactory<T>) factories.get(pointerInterface);
         if (ret != null) {
             return ret;
         }
-        JavassistArrayFactory<T> newFactory = newFactory(pointerInterface);
+        JavassistArrayFactory<T> newFactory = newFactory(pointerInterface, layout);
         ret = (JavassistArrayFactory<T>) factories.putIfAbsent(pointerInterface, newFactory);
         return (ret != null ? ret : newFactory);
     }
 
-    protected abstract <T extends StructPointer<T>> JavassistArrayFactory<T> newFactory(Class<T> pointerInterface);
+    protected abstract <T extends StructPointer<T>> JavassistArrayFactory<T> newFactory(Class<T> pointerInterface, StructLayout layout);
 
     public ClassPool getClassPool() {
         return classPool;

@@ -1,7 +1,7 @@
 package it.jpack.impl;
 
-import it.jpack.Struct;
 import it.jpack.StructField;
+import it.jpack.StructLayout;
 import it.jpack.StructPointer;
 import static it.jpack.impl.TypeHelper.*;
 import java.beans.Introspector;
@@ -36,15 +36,14 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
     private final Class<T> pointerInterface;
     private final CtClass ctClass;
     private final StringBuilder constructorBody = new StringBuilder();
-    private final int alignment;
-    private int offset;
+    private final StructLayout layout;
 
-    protected JavassistBuilder(JavassistRepository repository, Class<T> pointerInterface, ClassPool cPool, String className) {
+    protected JavassistBuilder(JavassistRepository repository, Class<T> pointerInterface, StructLayout layout, ClassPool cPool, String className) {
         try {
             this.repository = repository;
             this.pointerInterface = pointerInterface;
+            this.layout = layout;
             this.cPool = cPool;
-            this.alignment = getAlignment(pointerInterface.getAnnotation(Struct.class));
 
             ctClass = cPool.makeClass(className, cPool.get(AbstractPointer.class.getName()));
             ctClass.setModifiers(Modifier.FINAL + Modifier.PUBLIC);
@@ -55,41 +54,43 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
         }
     }
 
-    void addPrimitive(String name, String type, int fieldSize) throws IllegalStateException {
+    void addPrimitive(String name, Class<?> typeClass, int fieldSize) throws IllegalStateException {
         try {
+            int offset = layout.addField(name, typeClass, fieldSize);
+            String type = typeClass.getSimpleName();
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "getFieldPosition(" + offset + ")";
             String cType = Character.toUpperCase(type.charAt(0)) + type.substring(1);
             ctClass.addMethod(CtNewMethod.make("public " + type + " get" + cName + "() { return array.get" + cType + "(" + cOffset + "); }", ctClass));
             ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + type + " value) { return array.put" + cType + "(" + cOffset + ", value); }", ctClass));
-            offset += align(fieldSize);
         } catch (CannotCompileException ex) {
-            throw new IllegalStateException("Error adding " + type + " field " + name, ex);
+            throw new IllegalStateException("Error adding " + typeClass + " field " + name, ex);
         }
     }
 
-    void addPrimitiveArray(String name, String type, int fieldSize, int length) throws IllegalStateException {
+    void addPrimitiveArray(String name, Class<?> typeClass, int fieldSize, int length) throws IllegalStateException {
         try {
+            int offset = layout.addArrayField(name, typeClass, fieldSize, length);
+            String type = typeClass.getSimpleName();
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "i * " + fieldSize + " + getFieldPosition(" + offset + ")";
             String cType = Character.toUpperCase(type.charAt(0)) + type.substring(1);
             ctClass.addMethod(CtNewMethod.make("public " + type + " get" + cName + "(int i) { return array.get" + cType + "(" + cOffset + "); }", ctClass));
             ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(int i, " + type + " value) { return array.put" + cType + "(" + cOffset + ", value); }", ctClass));
-            offset += align(fieldSize * length);
         } catch (CannotCompileException ex) {
-            throw new IllegalStateException("Error adding " + type + " field " + name, ex);
+            throw new IllegalStateException("Error adding " + typeClass + " field " + name, ex);
         }
     }
 
     void addCharSequence(String name, int length) {
         try {
+            int offset = layout.addField(name, CharSequence.class, length * Character.SIZE / 8);
             ctClass.addField(new CtField(cPool.get(CharSequenceImpl.class.getName()), name, ctClass));
             constructorBody.append(String.format("this.%s = new it.jpack.impl.CharSequenceImpl(%d, %d, this);", name, length, offset));
             
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             ctClass.addMethod(CtNewMethod.make("public CharSequence get" + cName + "() { return this." + name + "; }", ctClass));
             ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(CharSequence value) { this." + name + ".set(value); }", ctClass));
-            offset += align(length * Character.SIZE / 8);
         } catch (CannotCompileException ex) {
             throw new IllegalStateException("Error adding CharSequence field " + name, ex);
         } catch (NotFoundException ex) {
@@ -99,11 +100,11 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
 
     void addString(String name, int length) {
         try {
+            int offset = layout.addField(name, String.class, length * Character.SIZE / 8);
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             String cOffset = "getFieldPosition(" + offset + ")";
             ctClass.addMethod(CtNewMethod.make("public String get" + cName + "() { return array.getString(" + cOffset + ", " + length + "); }", ctClass));
             ctClass.addMethod(CtNewMethod.make("public void setString(String value) { if (value.length() != " + length + ") { throw new IllegalArgumentException(\"String length must be " + length + "\"); } return array.putString(" + cOffset + ", value); }", ctClass));
-            offset += align(length * Character.SIZE / 8);
         } catch (CannotCompileException ex) {
             throw new IllegalStateException("Error adding String field " + name, ex);
         }
@@ -112,31 +113,28 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
     <S extends StructPointer<S>> void addStruct(String name, Class<S> pointerInterface, int length) {
         JavassistArrayFactory<S> innerFactory = repository.getFactory(pointerInterface);
         try {
+            int offset = (length == 1 ? layout.addField(name, pointerInterface, innerFactory.getStructSize())
+                    : layout.addArrayField(name, pointerInterface, innerFactory.getStructSize(), length));
             ctClass.addField(new CtField(innerFactory.getCtImplementation(), name, ctClass));
             constructorBody.append(String.format("this.%s = new %s(array, this, %d);", name, innerFactory.getCtImplementation().getName(), offset));
 
             String cName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             ctClass.addMethod(CtNewMethod.make("public " + pointerInterface.getName() + " get" + cName + "() { return " + name + "; }", ctClass));
             ctClass.addMethod(CtNewMethod.make("public void set" + cName + "(" + pointerInterface.getName() + " value) { throw new UnsupportedOperationException(); }", ctClass));
-            offset += align(innerFactory.getStructSize() * length);
         } catch (CannotCompileException ex) {
             throw new IllegalStateException(ex);
         }
     }
 
-    private int align(int size) {
-        int rem = size % alignment;
-        return rem == 0 ? size : size + (alignment - rem);
-    }
-
     private F build() {
         try {
-            ctClass.addMethod(CtNewMethod.make("public int getStructSize() { return " + offset + "; }", ctClass));
+            int size = layout.close();
+            ctClass.addMethod(CtNewMethod.make("public int getStructSize() { return " + size + "; }", ctClass));
             ctClass.addConstructor(CtNewConstructor.make("public " + ctClass.getSimpleName() + "(" + 
                     StructArrayInternal.class.getName() + " array, "
                     + StructPointerInternal.class.getName() + " parentPointer, "
                     + "int parentOffset) { " + constructorBody + " } ", ctClass));
-            return build(pointerInterface, (Class<? extends T>) ctClass.toClass(), ctClass, offset);
+            return build(pointerInterface, (Class<? extends T>) ctClass.toClass(), ctClass, size);
         } catch (CannotCompileException ex) {
             throw new IllegalStateException("Error finalizing class creation", ex);
         }
@@ -181,30 +179,6 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
     private static boolean isSetterSignature(Method m) {
         return m.getName().startsWith("set") && (m.getReturnType() == Void.TYPE)
                 && (m.getParameterTypes().length == 1 || (m.getParameterTypes().length == 2 && m.getParameterTypes()[0] == Integer.TYPE));
-    }
-
-    private static int getAlignment(Struct annotation) {
-        int align = annotation == null ? 0 : annotation.align();
-        if (align == 0) {
-            switch (System.getProperty("os.arch")) {
-                case "x86":
-                    return 4;
-                case "amd64":
-                    return 8;
-                default:
-                    throw new IllegalStateException("Unknown architecture from 'os.arch' system property: " + System.getProperty("os.arch"));
-            }
-        }
-        switch (align) {
-            case 1:
-            case 2:
-            case 4:
-            case 8:
-            case 16:
-                return align;
-            default:
-                throw new IllegalArgumentException("Unsupported alignment value: " + align);
-        }
     }
 
     private static final class PropertyInfo implements Comparable<PropertyInfo> {

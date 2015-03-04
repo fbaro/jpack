@@ -29,9 +29,9 @@ abstract class TypeHelper {
         @Override
         public void addTo(JavassistBuilder<?, ?> builder, String name, Class<?> inputType, int length) {
             if (length == 0 || length == 1) {
-                builder.addPrimitive(name, type.getSimpleName(), bitSize / 8);
+                builder.addPrimitive(name, type, bitSize / 8);
             } else {
-                builder.addPrimitiveArray(name, type.getSimpleName(), bitSize / 8, length);
+                builder.addPrimitiveArray(name, type, bitSize / 8, length);
             }
         }
     }
