@@ -31,7 +31,7 @@ public abstract class JavassistBuilder<T extends StructPointer<T>, F extends Jav
     private static final List<Method> STRUCT_POINTER_METHODS = Arrays.asList(StructPointer.class.getMethods());
     private static final List<TypeHelper> TYPE_HELPERS = Arrays.asList(TByte, TShort, TInt, TLong, TFloat, TDouble, TChar, TCharSequence, TString, TPointer);
 
-    private final JavassistRepository repository;
+    protected final JavassistRepository repository;
     private final ClassPool cPool;
     private final Class<T> pointerInterface;
     private final CtClass ctClass;

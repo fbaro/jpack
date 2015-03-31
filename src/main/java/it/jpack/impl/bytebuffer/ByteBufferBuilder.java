@@ -19,8 +19,10 @@ public class ByteBufferBuilder<T extends StructPointer<T>> extends JavassistBuil
     }
 
     @Override
-    protected ByteBufferArrayFactory<T> build(Class<T> pointerInterface, Class<? extends T> pointerImplementation, CtClass ctImplementation, int size) {
-        return new ByteBufferArrayFactory<>(pointerInterface, pointerImplementation, ctImplementation, size);
+    protected ByteBufferArrayFactory<T> build(Class<T> pointerInterface, Class<? extends T> pointerImplementation, 
+            CtClass ctImplementation, int size) {
+        return new ByteBufferArrayFactory<>(pointerInterface, pointerImplementation, 
+                ctImplementation, size, ((ByteBufferRepository)repository).getAllocator());
     }
 
     public static <T extends StructPointer<T>> ByteBufferArrayFactory<T> build(ByteBufferRepository repository, Class<T> pointerInterface, StructLayout layout) {
