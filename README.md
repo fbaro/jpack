@@ -3,7 +3,7 @@ jpack is a library to provide something similar to C arrays of struct types.
 
 ## Demo
 
-Define a structure...
+Define a structure:
 
 ```java
 public interface MyPointer extends StructPointer<MyPointer> {
@@ -44,7 +44,7 @@ jpack aims at providing support for such kind of structured data. The library st
 
 ### Struct definition
 
-The first step to use jpack is to define a structure! A structure is defined as a Java interface extending ```StructPointer```. The structure fields must be defined with the JavaBeans convention, as getter and setter methods in the interface. The types supported by jpack are all the primitive types, ```String```, ```CharSequence``` and any other interface extending ```StructPointer```. As ```StructPointer``` is generic on ```<T extends StructPointer>```, interfaces must be declared as extending a ```StructPointer``` on themselves.
+The first step to use jpack is to define a structure! A structure is defined as a Java interface extending ```StructPointer```. The structure fields must be defined with the JavaBeans convention, as getter and setter methods in the interface. The types supported by jpack are all the primitive types, ```String```, ```CharSequence```, and any other interface extending ```StructPointer```. As ```StructPointer``` is generic on ```<T extends StructPointer>```, interfaces must be declared as extending a ```StructPointer``` on themselves.
 
 ```java
 /** 
@@ -85,7 +85,7 @@ To create an array of structures, a ```StructRepository``` must be obtained firs
 An instance of ```StructRepository``` can be obtained from the ```Repositories``` static methods; most users will need just a single instance.
 
 ```java
-    StructRepository sRepo = Repositories.newByteBufferRepository();
+    StructRepository sRepo = Repositories.newByteBufferRepository(ByteOrder.nativeOrder());
 ```
 
 From a ```StructRepository```, arrays can be directly created by specifying the ```StructPointer``` implementation, and the array length.
@@ -96,7 +96,7 @@ From a ```StructRepository```, arrays can be directly created by specifying the 
 
 ### Data access
 
-An array can be accessed through a ```StructPointer```. A pointer is a mutable object, allowing to access the structure data present at in the array, at the index it is currently pointing to. A new pointer can be obtained from the array:
+An array can be accessed through a ```StructPointer```. A pointer is a mutable, thread unsafe object, allowing to access the structure data present at in the array, at the index it is currently pointing to. A new pointer can be obtained from the array:
 
 ```java
     MyPointer ptr = arr.newPointer();
@@ -110,10 +110,22 @@ To access the value of property *foo* at position 10 in the array, the pointer m
     ptr.setBar(3.5);
 ```
 
+### Substructures access
+A structure can contain other structures, both as a single element or as an array. Both situations are managed through ```StructPointer``` instances, which allow access to the substructure contents.
+
+It is important to underline that the pointer returned by the substructure getter is always the same instance, created when the external pointer was created. This has the advantage of not requiring any extra allocation to access a substructure element. However, in order to have two pointers to different substructure elements, it is necessary to create two pointers to the external element.
+
 ### Internals
 
 ```StructPointer``` implementations are dynamically generated at runtime, with the javaassist library. This helps to achieve maximum performance, since reflection is called just when first analyzing a newly received ```StructPointer```, but never during normal use.
 
-The ```at``` and ```setIndex``` methods are both very fast, requiring just a single assignment. The getter and setter implementors for primitive types are very fast as well, since they involve calculating the field position with respect to the current index - which in simple structure amounts to a multiplication and an addition.
+The ```at``` and ```setIndex``` methods are both very fast, requiring just a single assignment. The getter and setter implementors for primitive types are very fast as well, since they involve calculating the field position with respect to the current index - which in simple structures amounts to a multiplication and an addition.
 
-For ```String``` types, due to the limitations of the ```String``` class, a new ```char[]``` is populated with the required data, and then transformed into a ```String```. 
+#### Primitive getters and setters implementation
+Getters and setters for primitive types are very fast, and involve only the calculation of the offset of the filed inside the array. No allocation is performed within a primitive getter or setter.
+
+#### Structure getters and setters
+When an array pointer is created, another pointer is created for each substructure in the main structure. These pointers are returned when calling the getter of a substructure; accessing a substructure therefore requires no allocation.
+
+#### String getters and setters
+For ```String``` types, due to the limitations of the ```String``` class, a new ```char[]``` is populated with the required data, and then transformed into a ```String```. Getting the value of a ```String``` property therefore requires two allocations.

@@ -9,6 +9,7 @@ package it.jpack;
 public interface StructRepository {
     /**
      * Creates a new StructArray containing structures of type {@code T}.
+     * This is a shorthand for {@code getFactory(pointerInterface).newArray(length); }.
      * @param <T> The type of structures contained in the returned array
      * @param pointerInterface The Class representing the structures in the array
      * @param length The total number of T elements contained in the array
